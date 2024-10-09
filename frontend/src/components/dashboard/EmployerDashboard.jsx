@@ -5,7 +5,7 @@ export const EmployerDashboard = () => {
     return (
         <>
             <Header />
-            <EmployerSection/>
+            <EmployerSection />
         </>
     )
 }

@@ -47,9 +47,16 @@ const fetchEmployerJobs = async () => {
     return await axios.get('/employer-jobs');
 }
 
+const fetchAllJobs = async ({pageNum, limit, salary, tags}) => {
+    return await axios.get(`/jobs?pageNum=${pageNum}&limit=${limit}&salary=${salary}&tags=${tags}`);
+}
+
 const postEmployerJob = async (payload) => {
-    console.log(payload)
     return await axios.post('/post-job', payload)
+}
+
+const fetchJobApplicants = async (jobId) => {
+    return await axios.post('/job-applicants', {jobId});
 }
 
 export {
@@ -59,5 +66,7 @@ export {
     getUserProfile,
     saveProfileDetails,
     fetchEmployerJobs,
-    postEmployerJob
+    postEmployerJob,
+    fetchJobApplicants,
+    fetchAllJobs
 }

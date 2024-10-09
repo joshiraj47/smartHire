@@ -88,6 +88,7 @@ export const EmployerSection = () => {
                         onChange={(e) => setTags(e.target.value)}
                         placeholder="Enter tags separated by commas"
                         className="w-full px-2 py-2 border border-gray-300 rounded-md"
+                        required
                     />
                 </div>
 
@@ -144,7 +145,7 @@ export const EmployerSection = () => {
             <h2 className="text-xl font-bold mt-8 mb-4">Posted Jobs</h2>
             {isLoading && <p className="text-gray-500">Loading jobs...</p>}
             {isError && <p className="text-red-500">Error fetching jobs.</p>}
-            {data?.data?.jobs && data?.data?.jobs.length > 0 ? (
+            { data?.data?.jobs && data?.data?.jobs.length > 0 ? (
                 <div className="gap-4 grid grid-flow-row-dense md:grid-cols-2 lg:grid-cols-4 mx-auto">
                     {data?.data?.jobs.map((job) => (
                         <div key={job.jobId} className="relative">
@@ -153,6 +154,7 @@ export const EmployerSection = () => {
                     ))}
                 </div>
             ) : (
+                !isLoading && !data?.data?.jobs?.length &&
                 <p>No jobs posted yet.</p>
             )}
         </div>

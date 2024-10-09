@@ -9,7 +9,6 @@ const JobSchema = new Schema({
     jobTags: String,
     companyName: String,
     contact: String,
-    applicationsCount: Number,
     salary: Number,
 });
 

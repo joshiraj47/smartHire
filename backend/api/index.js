@@ -8,6 +8,8 @@ const UserModel = require("./models/User");
 const UserProfileModel = require("./models/UserProfile");
 const JobModel = require("./models/Job");
 const CounterModel = require("./models/Counter");
+const JobApplicantModel = require("./models/JobApplicant");
+const _ = require("lodash/fp");
 require('dotenv').config();
 
 const app = express();
@@ -86,7 +88,6 @@ app.get('/user-profile', checkCookieTokenAndReturnUserData, async (req, res) => 
 app.put("/update-profile/:userId", checkCookieTokenAndReturnUserData, async (req, res) => {
     const userId = req.params.userId;
     const {skills, githubUsername} = req.body;
-    console.log(userId)
     return UserProfileModel.findOneAndUpdate({userId: userId}, {$set: {skills, githubUsername}}, { returnOriginal: false, upsert: true })
         .then((updatedProfile) => {
             return res.json({profile: {skills: updatedProfile.skills, githubUsername: updatedProfile.githubUsername}});
@@ -98,20 +99,32 @@ app.put("/update-profile/:userId", checkCookieTokenAndReturnUserData, async (req
 
 app.get('/employer-jobs', checkCookieTokenAndReturnUserData, async (req, res) => {
     return JobModel.find({employerId: req.userData.userId})
-        .then((jobs) => {
-            const resp = jobs?.map(job =>  {
-                return {
-                    jobId: job.jobId,
-                    jobTitle: job.jobTitle,
-                    jobDescription: job.jobDescription,
-                    jobTags: job.jobTags,
-                    companyName: job.companyName,
-                    contact: job.contact,
-                    applicationsCount: job.applicationsCount,
-                    salary: job.salary
-                };
+        .then(async (jobs) => {
+            let updatedJobs = [];
+            const val = jobs?.reduce((prev, currentValue) => {
+                return prev.then(() => {
+                    return new Promise(async (resolve) => {
+                        const filterQuery = {jobId: currentValue.jobId};
+                        const totalApplicantsCount = await JobApplicantModel.countDocuments(filterQuery);
+                        const updatedJob = {
+                            jobId: currentValue.jobId,
+                            jobTitle: currentValue.jobTitle,
+                            jobDescription: currentValue.jobDescription,
+                            jobTags: currentValue.jobTags,
+                            companyName: currentValue.companyName,
+                            contact: currentValue.contact,
+                            applicationsCount: totalApplicantsCount,
+                            salary: currentValue.salary
+                        }
+                        updatedJobs.push(updatedJob);
+                        resolve(updatedJob);
+                    });
+                });
+            }, Promise.resolve({}));
+
+            val.then(() => {
+                return res.json({jobs: updatedJobs});
             });
-            return res.json({jobs: resp});
         });
 });
 
@@ -123,11 +136,120 @@ app.post("/post-job", checkCookieTokenAndReturnUserData, async (req, res) => {
         ...jobData,
         jobTags: jobData.tags,
         jobId: newJobId,
-        employerId,
-        applicationsCount: 0
+        employerId
     }).then((userDoc) => {
         return res.json(userDoc);
     });
+});
+
+app.post("/job-applicants", checkCookieTokenAndReturnUserData, async (req, res) => {
+    const {jobId} = req.body;
+    let resultApplicants = [];
+    return JobApplicantModel.find({jobId})
+        .then((jobApplicants) => {
+            const val = jobApplicants.reduce((prev, currentValue) => {
+                return prev.then(() => {
+                    return new Promise(async (resolve) => {
+                        let applicant = {};
+                        return UserProfileModel.findOne({userId: currentValue.applicantId})
+                            .then((profileDetails) => {
+                                applicant= {
+                                    skills: profileDetails.skills,
+                                    githubUsername: profileDetails.githubUsername,
+                                    userId: currentValue.applicantId
+                                };
+                            })
+                            .then(() => UserModel.findOne({userId: currentValue.applicantId}))
+                            .then((userData) => {
+                                applicant = {
+                                    ...applicant,
+                                    name: userData?.name,
+                                    email: userData?.email
+                                }
+                                resultApplicants.push(applicant);
+                                resolve(resultApplicants);
+                            });
+                    });
+                });
+            }, Promise.resolve({}));
+
+            val.then(() => {
+                return res.json({applicants: resultApplicants});
+            });
+        });
+});
+
+app.get("/jobs", checkCookieTokenAndReturnUserData, async (req, res) => {
+    const { tags, salary, pageNum = 1, limit = 20 } = req.query;
+    const page = parseInt(pageNum);
+    const pageSize = parseInt(limit);
+    const intSalary = parseInt(salary || 0);
+    let filterQuery = {};
+    if (tags && tags !== 'undefined' && tags !== 'null') {
+        const tagArray = tags.split(',');
+        filterQuery = {
+            ...filterQuery,
+            jobTags: { $regex: tagArray.join('|'), $options: 'i' }
+        };
+    }
+    if (intSalary){
+        filterQuery = {
+            ...filterQuery,
+            salary: { $gte: intSalary }
+        };
+    }
+    const skip = (page - 1) * pageSize;
+    let jobs = await JobModel.find(filterQuery, {_id: 0, __v: 0, employerId: 0})
+        .limit(pageSize)
+        .skip(skip)
+        .lean();
+    const totalJobsCount = await JobModel.countDocuments(filterQuery);
+    const jobIds = jobs?.map((job) => job.jobId);
+
+    return JobApplicantModel.aggregate([
+        {
+            $match: {
+                jobId: { $in: jobIds }
+            }
+        },
+        {
+            $group: {
+                _id: "$jobId",
+                applicants: {
+                    $push: "$applicantId"
+                }
+            }
+        },
+        {
+            $project: {
+                _id: 0,  // Exclude the default _id field
+                jobId: "$_id",
+                applicants: 1
+            }
+        }
+    ]).exec()
+        .then((jobsWithApplicantsArray) => {
+            jobs = jobs?.map(job => {
+                // Find the matching job in jobsWithApplicants array
+                const jobApplicants = jobsWithApplicantsArray?.find(jwa => jwa.jobId === job.jobId);
+
+                // Check if the userId is present in applicantIds
+                const hasApplied = jobApplicants ? jobApplicants.applicants.includes(req.userData?.userId) : false;
+
+                // Return the job object with the new attribute hasApplied
+                return {
+                    ...job,
+                    applicationsCount: jobApplicants?.applicants?.length || 0,
+                    hasApplied
+                };
+            });
+
+            const totalPages = Math.ceil(totalJobsCount / pageSize);
+            return res.json({
+                jobs,
+                metadata: {totalJobsCount, totalPages, page, pageSize}
+            });
+        });
 });
 
 function checkCookieTokenAndReturnUserData(request, res, next) {
