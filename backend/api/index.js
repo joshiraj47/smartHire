@@ -252,6 +252,35 @@ app.get("/jobs", checkCookieTokenAndReturnUserData, async (req, res) => {
         });
 });
 
+app.post('/apply-job', checkCookieTokenAndReturnUserData, async (req, res) => {
+    const {jobId} = req.body;
+    const applicantId = req.userData.userId;
+    return JobApplicantModel.create({
+        jobId,
+        applicantId,
+    })
+        .then(async (jobApplicant) => {
+            return JobModel.findOne({jobId});
+        })
+        .then(async (job) => {
+            const filterQuery = {jobId: job.jobId};
+            const totalApplicantsCount = await JobApplicantModel.countDocuments(filterQuery);
+            const updatedJob = {
+                jobId: job.jobId,
+                jobTitle: job.jobTitle,
+                jobDescription: job.jobDescription,
+                jobTags: job.jobTags,
+                companyName: job.companyName,
+                contact: job.contact,
+                applicationsCount: totalApplicantsCount,
+                salary: job.salary,
+                hasApplied: true
+            }
+            return res.json({job:updatedJob});
+        })
+});
+
+
 function checkCookieTokenAndReturnUserData(request, res, next) {
     const {token} = request.cookies;
     if (token) {

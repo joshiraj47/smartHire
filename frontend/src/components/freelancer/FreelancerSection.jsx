@@ -25,6 +25,12 @@ export const FreelancerSection = () => {
         setAppliedFilter(filter);
     }
 
+    const onApplyJob = (updatedJob) => {
+        const currentJobs = [...jobs];
+        const updatedJobs = currentJobs.map(job => job.jobId === updatedJob.jobId ? {...job, ...updatedJob} : job);
+        setJobs(updatedJobs);
+    }
+
 
     const handlePageChange = useCallback((val) => {
         setPageNum(val);
@@ -42,7 +48,7 @@ export const FreelancerSection = () => {
                     <div className="gap-4 grid grid-flow-row-dense md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 mx-auto">
                         {jobs.map((job) => (
                             <div key={job.jobId} className="relative">
-                                <JobCard job={job}/>
+                                <JobCard job={job} onApplyJob={onApplyJob}/>
                             </div>
                         ))}
                     </div> :

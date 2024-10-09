@@ -51,6 +51,18 @@ const fetchAllJobs = async ({pageNum, limit, salary, tags}) => {
     return await axios.get(`/jobs?pageNum=${pageNum}&limit=${limit}&salary=${salary}&tags=${tags}`);
 }
 
+const applyJob = async (jobId) => {
+    const applyJob = axios.post('/apply-job', jobId);
+    return await toast.promise(
+        applyJob,
+        {
+            success: 'Applied successfully',
+            error: 'Failed to apply'
+        },
+        {pauseOnHover: false}
+    );
+}
+
 const postEmployerJob = async (payload) => {
     return await axios.post('/post-job', payload)
 }
@@ -68,5 +80,6 @@ export {
     fetchEmployerJobs,
     postEmployerJob,
     fetchJobApplicants,
-    fetchAllJobs
+    fetchAllJobs,
+    applyJob
 }

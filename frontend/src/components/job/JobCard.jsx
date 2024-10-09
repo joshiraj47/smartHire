@@ -2,9 +2,18 @@ import React from "react";
 import {useAuth} from "../../auth/AuthProvider.jsx";
 import {UserRoles} from "../../constants/globalConstants.jsx";
 import {ViewApplicants} from "../applicants/ViewApplicants.jsx";
+import {useMutation} from "@tanstack/react-query";
+import {applyJob} from "../../query/apiRequests.jsx";
 
-export const JobCard = ({job}) => {
+export const JobCard = ({job, onApplyJob}) => {
     const {user} = useAuth();
+
+    const {mutate: applyJobMutate, isPending} = useMutation({mutationFn: applyJob, enabled: false,
+        onSuccess: (data) => onApplyJob(data?.data?.job)});
+    const applyForJob = (jobId) => {
+        applyJobMutate({jobId});
+    }
+
     return (
         <>
             <div
@@ -44,10 +53,12 @@ export const JobCard = ({job}) => {
                         user && user.userRole === UserRoles.FREELANCER &&
                         <button
                             type='button'
-                            disabled={job.hasApplied}
-                            className='btn btn-primary btn-md bg-blue-500'>
+                            disabled={job.hasApplied || isPending}
+                            className='btn btn-primary btn-md bg-blue-500'
+                            onClick={() => applyForJob(job.jobId)}
+                        >
                             {
-                                job.hasApplied ? <span>Applied</span> : <span>Apply Now</span>
+                                job.hasApplied ? <span>Applied</span> : isPending ? <span>Applying</span> : <span>Apply Now</span>
                             }
                         </button>
                     }
