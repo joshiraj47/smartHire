@@ -22,11 +22,11 @@ app.use(express.json());
 app.use(cookieParser());
 
 if (ENVIRONMENT === 'PRODUCTION') {
-    // app.use(cors({
-    //     credentials: true,
-    //     origin: 'https://gojira-ui.vercel.app',
-    //     methods: ["POST", "GET", "PUT","DELETE","OPTIONS"]
-    // }));
+    app.use(cors({
+        credentials: true,
+        origin: 'https://smarthire-ui.vercel.app',
+        methods: ["POST", "GET", "PUT","DELETE","OPTIONS"]
+    }));
 } else {
     app.use(cors({
         credentials: true,

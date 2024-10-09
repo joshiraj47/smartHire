@@ -12,7 +12,7 @@ import {Dashboard} from "./components/dashboard/Dashboard.jsx";
 import axios from "axios";
 import {Userprofile} from "./components/userProfile/Userprofile.jsx";
 
-axios.defaults.baseURL = import.meta.env.REACT_APP_NODE_ENV === 'PRODUCTION' ? 'https://gojira-backend.onrender.com' : 'http://localhost:4000';
+axios.defaults.baseURL = import.meta.env.REACT_APP_NODE_ENV === 'PRODUCTION' ? 'https://smarthire-backend-dh3x.onrender.com' : 'http://localhost:4000';
 axios.defaults.withCredentials = true;
 axios.defaults.credentials = 'include';
 
