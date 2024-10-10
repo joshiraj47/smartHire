@@ -40,7 +40,17 @@ export const EmployerSection = () => {
         const currentJobs = [...postedJobs];
         const updatedJobs = [...currentJobs, postedJob];
         setPostedJobs(updatedJobs);
+        resetFormData();
     };
+
+    const resetFormData = () => {
+        setJobTitle('');
+        setJobDescription('');
+        setTags('');
+        setCompanyName('');
+        setContactInfo('');
+        setSalary('');
+    }
 
     const handleSubmit = (e) => {
         e.preventDefault();
