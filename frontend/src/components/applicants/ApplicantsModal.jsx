@@ -3,7 +3,7 @@ import { Modal, Button } from 'react-bootstrap';
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {fetchJobApplicants, getGithubRepos} from "../../query/apiRequests.jsx";
 
-export const ApplicantsModal = ({jobId, show, handleClose }) => {
+const ApplicantsModal = ({jobId, show, handleClose }) => {
     const [selectedApplicant, setSelectedApplicant] = useState(null);
     const [applicants, setApplicants] = useState(null);
     const [fetchApplicantError, setFetchApplicantError] = useState(null);
@@ -115,3 +115,5 @@ export const ApplicantsModal = ({jobId, show, handleClose }) => {
         </Modal>
     );
 };
+
+export default ApplicantsModal;

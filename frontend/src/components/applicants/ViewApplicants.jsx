@@ -1,5 +1,5 @@
-import {Suspense, useState} from "react";
-import {ApplicantsModal} from "./ApplicantsModal.jsx";
+import React, {Suspense, useState} from "react";
+const LazyModal = React.lazy(() => import('./ApplicantsModal.jsx'));
 import {Spinner} from "react-bootstrap";
 
 export const ViewApplicants = ({jobId}) => {
@@ -10,7 +10,7 @@ export const ViewApplicants = ({jobId}) => {
             </button>
             {showApplicantsModal && (
                 <Suspense fallback={<Spinner animation="border" variant="primary" />}>
-                    <ApplicantsModal jobId={jobId} show={showApplicantsModal} handleClose={() => setShowApplicantsModal(false)}/>
+                    <LazyModal jobId={jobId} show={showApplicantsModal} handleClose={() => setShowApplicantsModal(false)}/>
                 </Suspense>
             )}
         </>
