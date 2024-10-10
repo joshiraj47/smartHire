@@ -138,7 +138,16 @@ app.post("/post-job", checkCookieTokenAndReturnUserData, async (req, res) => {
         jobId: newJobId,
         employerId
     }).then((userDoc) => {
-        return res.json(userDoc);
+        let resp = {
+            jobId: userDoc.jobId,
+            jobTitle: userDoc.jobTitle,
+            jobDescription: userDoc.jobDescription,
+            jobTags: userDoc.jobTags,
+            companyName: userDoc.companyName,
+            contact: userDoc.contact,
+            salary: userDoc.salary
+        }
+        return res.json({job: resp});
     });
 });
 

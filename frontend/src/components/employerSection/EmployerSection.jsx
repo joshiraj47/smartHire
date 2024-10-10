@@ -9,6 +9,7 @@ const postJob = async (jobData) => {
     return data;
 };
 export const EmployerSection = () => {
+    const [postedJobs, setPostedJobs] = useState([]);
     const [jobDescription, setJobDescription] = useState('');
     const [jobTitle, setJobTitle] = useState('');
     const [tags, setTags] = useState('');
@@ -20,15 +21,26 @@ export const EmployerSection = () => {
     const navigate = useNavigate();
 
     const {data, isLoading, refetch: fetchJobs, isError } = useQuery({queryKey: ["jobs"], queryFn: fetchEmployerJobs, enabled: false});
-    const {mutate: postJobMutate, isPending, isSuccess, isError: postJobError} = useMutation({mutationFn: postJob, enabled: false,
+    const {mutate: postJobMutate, isPending} = useMutation({mutationFn: postJob, enabled: false,
         onError: () => {
             setError('Error posting the job. Please try again...');
         },
-        onSuccess: (data) => navigate('/')});
+        onSuccess: (updatedJobsData) => updatePostedJobs(updatedJobsData?.job)
+    });
 
     useEffect(() => {
         fetchJobs();
     }, []);
+
+    useEffect(() => {
+        setPostedJobs(data?.data?.jobs || []);
+    }, [data]);
+
+    const updatePostedJobs = (postedJob) => {
+        const currentJobs = [...postedJobs];
+        const updatedJobs = [...currentJobs, postedJob];
+        setPostedJobs(updatedJobs);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -137,7 +149,9 @@ export const EmployerSection = () => {
                         type="submit"
                         className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600"
                     >
-                        Post Job
+                        {
+                            isPending ? <span>Posting</span> : <span>Post Job</span>
+                        }
                     </button>
                 </div>
             </form>
@@ -145,16 +159,16 @@ export const EmployerSection = () => {
             <h2 className="text-xl font-bold mt-8 mb-4">Posted Jobs</h2>
             {isLoading && <p className="text-gray-500">Loading jobs...</p>}
             {isError && <p className="text-red-500">Error fetching jobs.</p>}
-            { data?.data?.jobs && data?.data?.jobs.length > 0 ? (
+            { postedJobs && postedJobs.length > 0 ? (
                 <div className="gap-4 grid grid-flow-row-dense md:grid-cols-2 lg:grid-cols-4 mx-auto">
-                    {data?.data?.jobs.map((job) => (
+                    {postedJobs?.map((job) => (
                         <div key={job.jobId} className="relative">
                             <JobCard job={job}/>
                         </div>
                     ))}
                 </div>
             ) : (
-                !isLoading && !data?.data?.jobs?.length &&
+                !isLoading && !postedJobs?.length &&
                 <p>No jobs posted yet.</p>
             )}
         </div>

@@ -64,7 +64,14 @@ const applyJob = async (jobId) => {
 }
 
 const postEmployerJob = async (payload) => {
-    return await axios.post('/post-job', payload)
+    const applyJob = axios.post('/post-job', payload);
+    return await toast.promise(
+        applyJob,
+        {
+            success: 'Posted successfully',
+        },
+        {pauseOnHover: false}
+    );
 }
 
 const fetchJobApplicants = async (jobId) => {
